@@ -18,6 +18,8 @@ int myargc = 0;
 
 void tokenize(char source[]);
 int myrcp(char *f1, char *f2);
+int cpf2f(char *f1, char *f2);
+
 
 int main(int argc, char *argv[]){
 
@@ -47,7 +49,6 @@ int main(int argc, char *argv[]){
         //whatever that means.. will return
         return 0;
     }
-
 
     //Let's get to it!
     return myrcp(userCommand[1], userCommand[2]);
@@ -81,9 +82,9 @@ int myrcp(char *f1, char *f2)
     struct stat f1Stat;
     struct stat f2Stat;
 
-
     int status = stat(f1, &f1Stat);
 
+    //Does file 1 exist?
     if (status == -1){
 
         //err
@@ -91,7 +92,8 @@ int myrcp(char *f1, char *f2)
         return status;
     }
 
-    if(S_ISREG(f1Stat.st_mode) || S_ISLNK(f1Stat.st_mode)){   //Is File 1 Regular or a Link?
+    //Is File 1 Regular or a Link?
+    if(S_ISREG(f1Stat.st_mode) || S_ISLNK(f1Stat.st_mode)){
 
         //Stat file 2
         status = stat(f2, &f2Stat);
@@ -100,9 +102,8 @@ int myrcp(char *f1, char *f2)
         if (status == -1 || (status == 0 && S_ISREG(f2Stat.st_mode)))
         {
 
-            printf("oh, hey there.\n");
-
-            //return cpf2f(f1, f2);
+            //file to file copy
+            return cpf2f(f1, f2);
 
         }else{  //f2 exists and is a dir
 
@@ -139,41 +140,39 @@ int myrcp(char *f1, char *f2)
         return -1;
     }
 
-
-
-    
-
-    //     //err
-    //     printf("Argument 1 does not exist!\n");
-    //     return status;
-    // }else 
-
-
-        // if (status == 0 &&
-        //     (S_ISREG(f2Stat.st_mode) || S_ISLNK(f2Stat.st_mode)))  //Does 2 exist and is not Regular or a Link?
-        // {   
-        //     //err
-        //     printf("Argument 2 is not REG or LNK\n");
-        //     return -1;
-        // }
-
-
-    
-    // {
-    //    1. stat f1;   if f1 does not exist ==> exit.
-    //                  f1 exists: reject if f1 is not REG or LNK file
-    //    2. stat f2;   reject if f2 exists and is not REG or LNK file
-
-    //    3. if (f1 is REG){
-    //          if (f2 non-exist OR exists and is REG)
-    //             return cpf2f(f1, f2);
-    // 	 else // f2 exist and is DIR
-    //             return cpf2d(f1,f2);
-    //       }
-    //    4. if (f1 is DIR){
-    // 	if (f2 exists but not DIR) ==> reject;
-    //         if (f2 does not exist)     ==> mkdir f2
-    // 	return cpd2d(f1, f2);
-    //       }
     return 0;
+}
+
+// cp file to file
+int cpf2f(char *f1, char *f2)
+{
+
+    struct stat f1StatStruct;
+    struct stat f2StatStruct;
+
+    int f1Status = stat(f1, &f1StatStruct);
+    int f2Status = stat(f2, &f2StatStruct);
+
+    //check the std_ino to verify if the two files are the same (actual or link)
+    if(f1StatStruct.st_ino == f2StatStruct.st_ino){
+
+        printf("File 1 and File 2 are the same file!\n");
+        return -1;
+    }else if((S_ISLNK(f1StatStruct.st_mode) == 0) && f2Status == 0){   //link to existing file check
+
+        printf("Cannot copy link to existing file!\n");
+        return -1;
+    }else if((S_ISLNK(f1StatStruct.st_mode) == 0) && f2Status == -1){
+
+        //create a symbolic link between f1 and f2 to whatever f1 is already linked to
+        return symlink(f1, f2); 
+    }
+    
+//   1. reject if f1 and f2 are the SAME file
+//   2. if f1 is LNK and f2 exists: reject
+//   3. if f1 is LNK and f2 does not exist: create LNK file f2 SAME as f1
+//   4:
+//      open f1 for READ;
+//      open f2 for O_WRONLY|O_CREAT|O_TRUNC, mode=mode_of_f1;
+//      copy f1 to f2
 }
