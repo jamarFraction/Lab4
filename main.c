@@ -96,28 +96,43 @@ int myrcp(char *f1, char *f2)
         //Stat file 2
         status = stat(f2, &f2Stat);
 
-        if (status == 0 &&
-            !(S_ISREG(f2Stat.st_mode) || S_ISLNK(f2Stat.st_mode)))  //Does 2 exist and is not Regular or a Link?
-        {   
-            //err
-            printf("Argument 2 is not REG or LNK\n");
+        //If f2 DNE OR exists AND is a regular
+        if (status == -1 || (status == 0 && S_ISREG(f2Stat.st_mode)))
+        {
+
+            printf("oh, hey there.\n");
+
+            //return cpf2f(f1, f2);
+
+        }else{  //f2 exists and is a dir
+
+            printf("I'm a directory\n");
+
+            //return cpf2d(f1,f2);
+        }
+
+        //All else has failed for argument 2
+        printf("Argument 2 is not REG or LNK\n");
+        return -1;
+    }else if(S_ISDIR(f1Stat.st_mode)){  //Is F1 a Directory?
+
+        //Stat file 2
+        status = stat(f2, &f2Stat);
+
+        if(status == 0 && !(S_ISDIR(f2Stat.st_mode))){
+
+            printf("Argument 2 is not also a directory!\n");
             return -1;
         }
 
-        //If f1 is regular
-        if(S_ISREG(f1Stat.st_mode)){
+        //F2 DNE and needs to be a directory, so let's create one
+        if(status = -1){
 
-            //If f2 DNE or exists and is a regular
-            if(status == -1 || (status == 0 && S_ISREG(f2Stat.st_mode))){
+            //create the dir
+            mkdir(f2, 0777);
+        }
 
-                printf("oh, hey there.\n");
-
-                //return cpf2f(f1, f2);
-            }
-        }   
-    }else if(S_ISDIR(f1Stat.st_mode)){  //Is F1 a Directory?
-
-        //printf("oh, hey there.\n");
+        //return cpd2d(f1, f2);
     }else{
         //err
         printf("File 1 is not REG or LNK or DIR\n");
@@ -132,6 +147,15 @@ int myrcp(char *f1, char *f2)
     //     printf("Argument 1 does not exist!\n");
     //     return status;
     // }else 
+
+
+        // if (status == 0 &&
+        //     (S_ISREG(f2Stat.st_mode) || S_ISLNK(f2Stat.st_mode)))  //Does 2 exist and is not Regular or a Link?
+        // {   
+        //     //err
+        //     printf("Argument 2 is not REG or LNK\n");
+        //     return -1;
+        // }
 
 
     
