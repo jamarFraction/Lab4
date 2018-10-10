@@ -54,3 +54,6 @@ lab4
 
 #vscode
 *.json
+
+#testing
+*.txt

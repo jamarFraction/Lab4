@@ -78,8 +78,63 @@ void tokenize(char source[])
 int myrcp(char *f1, char *f2)
 {
     
+    struct stat f1Stat;
+    struct stat f2Stat;
 
-    printf("oh, hey there.\n");
+
+    int status = stat(f1, &f1Stat);
+
+    if (status == -1){
+
+        //err
+        printf("Argument 1 does not exist!\n");
+        return status;
+    }
+
+    if(S_ISREG(f1Stat.st_mode) || S_ISLNK(f1Stat.st_mode)){   //Is File 1 Regular or a Link?
+
+        //Stat file 2
+        status = stat(f2, &f2Stat);
+
+        if (status == 0 &&
+            !(S_ISREG(f2Stat.st_mode) || S_ISLNK(f2Stat.st_mode)))  //Does 2 exist and is not Regular or a Link?
+        {   
+            //err
+            printf("Argument 2 is not REG or LNK\n");
+            return -1;
+        }
+
+        //If f1 is regular
+        if(S_ISREG(f1Stat.st_mode)){
+
+            //If f2 DNE or exists and is a regular
+            if(status == -1 || (status == 0 && S_ISREG(f2Stat.st_mode))){
+
+                printf("oh, hey there.\n");
+
+                //return cpf2f(f1, f2);
+            }
+        }   
+    }else if(S_ISDIR(f1Stat.st_mode)){  //Is F1 a Directory?
+
+        //printf("oh, hey there.\n");
+    }else{
+        //err
+        printf("File 1 is not REG or LNK or DIR\n");
+        return -1;
+    }
+
+
+
+    
+
+    //     //err
+    //     printf("Argument 1 does not exist!\n");
+    //     return status;
+    // }else 
+
+
+    
     // {
     //    1. stat f1;   if f1 does not exist ==> exit.
     //                  f1 exists: reject if f1 is not REG or LNK file
