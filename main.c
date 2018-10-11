@@ -137,7 +137,7 @@ int myrcp(char *f1, char *f2)
 
         //return cpd2d(f1, f2);
     }else{
-        
+
         //err
         printf("File 1 is not REG or LNK or DIR\n");
         return -1;
@@ -198,10 +198,12 @@ int cpf2f(char *f1, char *f2)
         //close f2's fd
         close(fd1);    
 
+        //success
         printf("Copy %s to %s successful!\n", f1, f2); 
         return 1;   
     }
 
     //Print a generic failure message
     printf("Copy %s to %s failed!\n", f1, f2);
+    return -1;
 }
