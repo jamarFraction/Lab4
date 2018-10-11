@@ -51,7 +51,9 @@ int main(int argc, char *argv[]){
     }
 
     //Let's get to it!
-    return myrcp(userCommand[1], userCommand[2]);
+    int result = myrcp(userCommand[1], userCommand[2]);
+
+    return 0;
 }
 
 void tokenize(char source[])
@@ -82,7 +84,7 @@ int myrcp(char *f1, char *f2)
     struct stat f1Stat;
     struct stat f2Stat;
 
-    int status = stat(f1, &f1Stat);
+    int status = lstat(f1, &f1Stat);
 
     //Does file 1 exist?
     if (status == -1){
@@ -93,13 +95,13 @@ int myrcp(char *f1, char *f2)
     }
 
     //Is File 1 Regular or a Link?
-    if(S_ISREG(f1Stat.st_mode) || S_ISLNK(f1Stat.st_mode)){
+    if(S_ISREG(f1Stat.st_mode) || (S_ISLNK(f1Stat.st_mode))){
 
         //Stat file 2
-        status = stat(f2, &f2Stat);
+        status = lstat(f2, &f2Stat);
 
         //If f2 DNE OR exists AND is a regular
-        if (status == -1 || (status == 0 && S_ISREG(f2Stat.st_mode)))
+        if (status == -1 || (status == 0 && (S_ISREG(f2Stat.st_mode))))
         {
 
             //file to file copy
@@ -107,7 +109,7 @@ int myrcp(char *f1, char *f2)
 
         }else{  //f2 exists and is a dir
 
-            printf("I'm a directory\n");
+            printf("F2 is a directory\n");
 
             //return cpf2d(f1,f2);
         }
@@ -130,11 +132,12 @@ int myrcp(char *f1, char *f2)
         if(status = -1){
 
             //create the dir
-            mkdir(f2, 0777);
+            mkdir(f2, 0744);
         }
 
         //return cpd2d(f1, f2);
     }else{
+        
         //err
         printf("File 1 is not REG or LNK or DIR\n");
         return -1;
@@ -146,33 +149,59 @@ int myrcp(char *f1, char *f2)
 // cp file to file
 int cpf2f(char *f1, char *f2)
 {
-
+    //stat structures for f1 and f2
     struct stat f1StatStruct;
     struct stat f2StatStruct;
 
-    int f1Status = stat(f1, &f1StatStruct);
-    int f2Status = stat(f2, &f2StatStruct);
+    //f1 & f2 lstat status
+    int f1Status = lstat(f1, &f1StatStruct);
+    int f2Status = lstat(f2, &f2StatStruct);
+
 
     //check the std_ino to verify if the two files are the same (actual or link)
     if(f1StatStruct.st_ino == f2StatStruct.st_ino){
 
         printf("File 1 and File 2 are the same file!\n");
         return -1;
-    }else if((S_ISLNK(f1StatStruct.st_mode) == 0) && f2Status == 0){   //link to existing file check
+    }else if((S_ISLNK(f1StatStruct.st_mode) && f2Status == 0)){   //link to existing file check
 
         printf("Cannot copy link to existing file!\n");
         return -1;
-    }else if((S_ISLNK(f1StatStruct.st_mode) == 0) && f2Status == -1){
+    }else if((S_ISLNK(f1StatStruct.st_mode) && f2Status == -1)){
 
         //create a symbolic link between f1 and f2 to whatever f1 is already linked to
         return symlink(f1, f2); 
+    }else{
+
+        int fd0, fd1;
+        int result = 0;
+        char buffer[4096];
+        
+        //open f1 for reading
+        fd0 = open(f1, O_RDONLY);
+        
+        //read the data from f1's fd to the buffer
+        read(fd0, buffer , sizeof(buffer));
+        
+        //close f1's fd
+        close(fd0);
+
+        //open f2 (or create it if nonexistent) for reading 
+        fd1 = open(f2, O_WRONLY | O_CREAT | O_TRUNC);
+
+        //duplicate the permissions for File 1 to File 2
+        chmod(f2, f1StatStruct.st_mode);
+
+        //write to f2
+        result = write(fd1, buffer, strlen(buffer));
+
+        //close f2's fd
+        close(fd1);    
+
+        printf("Copy %s to %s successful!\n", f1, f2); 
+        return 1;   
     }
-    
-//   1. reject if f1 and f2 are the SAME file
-//   2. if f1 is LNK and f2 exists: reject
-//   3. if f1 is LNK and f2 does not exist: create LNK file f2 SAME as f1
-//   4:
-//      open f1 for READ;
-//      open f2 for O_WRONLY|O_CREAT|O_TRUNC, mode=mode_of_f1;
-//      copy f1 to f2
+
+    //Print a generic failure message
+    printf("Copy %s to %s failed!\n", f1, f2);
 }
