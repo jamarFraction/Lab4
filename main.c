@@ -19,6 +19,7 @@ int myargc = 0;
 void tokenize(char source[]);
 int myrcp(char *f1, char *f2);
 int cpf2f(char *f1, char *f2);
+int cpf2d(char *f1, char *f2);
 
 
 int main(int argc, char *argv[]){
@@ -111,7 +112,7 @@ int myrcp(char *f1, char *f2)
 
             printf("F2 is a directory\n");
 
-            //return cpf2d(f1,f2);
+            return cpf2d(f1,f2);
         }
 
         //All else has failed for argument 2
@@ -206,4 +207,54 @@ int cpf2f(char *f1, char *f2)
     //Print a generic failure message
     printf("Copy %s to %s failed!\n", f1, f2);
     return -1;
+}
+
+int cpf2d(char *f1, char *f2)
+{
+    char *f1Basename = basename(f1);
+    char *f2Dirname = dirname(f2);
+    DIR *f2Directory= opendir(f2);
+    struct dirent *dp;
+    char newF2[32];
+
+    //Prepare the new f2
+    strcpy(newF2, f2);
+    strcat(newF2, "/");
+    strcat(newF2, f1Basename);
+
+    //check for f1 in f2 (dir)
+    while ((dp = readdir(f2Directory)) != NULL) {
+
+        //compare the file names 
+        if(strcmp(dp->d_name, f1Basename) == 0){
+
+            //target f1 exists in f2
+            //lstat the file for info
+            struct stat f1StatStruct;
+            int f1Status = lstat(f1, &f1StatStruct);
+            
+            //close the opened dir
+            closedir(f2Directory);
+
+            //Is f1 Regular or a Link?
+            if (S_ISREG(f1StatStruct.st_mode) || (S_ISLNK(f1StatStruct.st_mode)))
+            {
+                
+                return cpf2f(f1, newF2);
+            }else if(S_ISDIR(f1StatStruct.st_mode)){    //is f1 a directory?
+
+                return cpf2d(f1, newF2);
+            }
+
+            printf("Restricted file!\n");
+            return -1;
+        }
+       
+    }
+
+    //f1 does not exist in f2
+    //close the directory
+    closedir(f2Directory);
+
+    return cpf2f(f1, newF2);
 }
